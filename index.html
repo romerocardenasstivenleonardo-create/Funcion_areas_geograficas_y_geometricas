@@ -1,416 +1,351 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>pgAdmin: Funciones de Área Geográficas y Geométricas</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funciones de áreas geográficas y geométricas en bases de datos</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      height: 100%;
+      overflow: hidden;
+    }
 
-        body {
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: #f0f4f8;
-            color: #1a2a3a;
-            line-height: 1.5;
-            padding: 2rem 1.5rem;
-        }
+    .slides-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
 
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 2rem;
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            padding: 2rem 2rem 2.5rem 2rem;
-        }
+    .slide {
+      display: none;
+      width: 90%;
+      max-width: 1100px;
+      height: 85%;
+      background: #222;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      padding: 40px;
+      box-sizing: border-box;
+      flex-direction: column;
+      justify-content: center;
+      overflow-y: auto;
+      transition: opacity 0.4s ease;
+    }
 
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1e5f74, #1e3b5c);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            border-left: 6px solid #1e7e6c;
-            padding-left: 1.2rem;
-            margin-bottom: 0.75rem;
-        }
+    .slide.active {
+      display: flex;
+    }
 
-        .intro {
-            background: #eef2fa;
-            padding: 1.2rem 1.8rem;
-            border-radius: 1.5rem;
-            margin: 1.5rem 0 2rem 0;
-            border-left: 5px solid #2c7da0;
-            font-size: 1rem;
-            color: #0b3b4f;
-        }
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: none;
+      font-size: 2.5rem;
+      padding: 15px 20px;
+      cursor: pointer;
+      border-radius: 8px;
+      z-index: 10;
+      transition: background 0.3s;
+    }
 
-        .intro p {
-            margin: 0.5rem 0;
-        }
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
 
-        .grid-cards {
-            display: flex;
-            flex-direction: column;
-            gap: 2.5rem;
-            margin-top: 1rem;
-        }
+    .prev-btn { left: 20px; }
+    .next-btn { right: 20px; }
 
-        .function-card {
-            background: #ffffff;
-            border-radius: 1.8rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease;
-            border: 1px solid #e2edf2;
-            overflow: hidden;
-        }
+    .counter {
+      position: absolute;
+      bottom: 20px;
+      right: 30px;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      color: #ccc;
+      z-index: 10;
+    }
 
-        .function-card:hover {
-            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
+    h1, h2, h3, h4 {
+      margin: 0 0 15px 0;
+      color: #ffb347;
+    }
 
-        .func-header {
-            background: #f9fdfe;
-            padding: 1.2rem 2rem;
-            border-bottom: 2px solid #d4e3ed;
-        }
+    h1 { font-size: 2.4rem; text-align: center; }
+    h2 { font-size: 2.2rem; }
+    h3 { font-size: 1.8rem; }
+    h4 { font-size: 1.5rem; }
 
-        .func-name {
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 1.7rem;
-            font-weight: 700;
-            color: #0f5c6b;
-            letter-spacing: -0.3px;
-            word-break: break-word;
-        }
+    ul, ol {
+      text-align: left;
+      padding-left: 30px;
+      line-height: 1.7;
+      font-size: 1.15rem;
+    }
 
-        .func-name small {
-            font-size: 0.85rem;
-            font-weight: 400;
-            background: #e9f0f5;
-            padding: 0.2rem 0.6rem;
-            border-radius: 40px;
-            margin-left: 0.75rem;
-            color: #2c6e6e;
-            vertical-align: middle;
-        }
+    pre {
+      background: #333;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      text-align: left;
+      font-size: 0.95rem;
+      margin: 15px 0;
+    }
 
-        .desc-section {
-            padding: 1.5rem 2rem 0.8rem 2rem;
-            background: #ffffff;
-        }
+    code {
+      font-family: 'Courier New', monospace;
+      background: #444;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
 
-        .desc-section p {
-            font-size: 1.02rem;
-            margin-bottom: 1rem;
-            color: #2c3e44;
-        }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 1rem;
+    }
 
-        .desc-section strong {
-            color: #1f6d6b;
-            font-weight: 600;
-        }
+    th, td {
+      border: 1px solid #555;
+      padding: 10px 15px;
+    }
 
-        .example-section {
-            background: #f8fafd;
-            margin: 0.5rem 2rem 2rem 2rem;
-            border-radius: 1.2rem;
-            padding: 1.2rem 1.5rem;
-            border: 1px solid #e0ecf2;
-        }
+    th {
+      background: #444;
+      color: #ffb347;
+    }
 
-        .example-title {
-            font-weight: 700;
-            font-size: 1rem;
-            color: #1a5d6c;
-            margin-bottom: 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .small-note {
+      font-size: 0.8rem;
+      color: #999;
+    }
 
-        .example-title span {
-            background: #d9e8ef;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
+    .author-name {
+      font-size: 1.8rem;
+      color: #ffb347;
+      margin-top: 20px;
+      font-weight: bold;
+    }
 
-        pre {
-            background: #0f2027;
-            color: #eef4ff;
-            padding: 1.2rem;
-            border-radius: 1rem;
-            overflow-x: auto;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 0.85rem;
-            line-height: 1.45;
-            margin: 0.8rem 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            background: #eef3f7;
-            padding: 0.2rem 0.4rem;
-            border-radius: 8px;
-            color: #1d5a6e;
-            font-size: 0.9rem;
-        }
-
-        .output-sample {
-            background: #e9f0e9;
-            border-left: 4px solid #2c8c6e;
-            padding: 0.8rem 1.2rem;
-            border-radius: 12px;
-            margin-top: 1rem;
-            font-family: monospace;
-            font-size: 0.9rem;
-            color: #1e4a4a;
-        }
-
-        .output-sample strong {
-            color: #115c4b;
-        }
-
-        hr {
-            margin: 1rem 0;
-            border: 0;
-            height: 1px;
-            background: linear-gradient(to right, #cbdde6, transparent);
-        }
-
-        .badge-note {
-            background: #f0e7d6;
-            border-radius: 30px;
-            padding: 0.15rem 0.7rem;
-            font-size: 0.75rem;
-            font-weight: normal;
-            color: #8a6e3b;
-        }
-
-        footer {
-            margin-top: 3rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: #4e6b7a;
-            border-top: 1px solid #d9e2e8;
-            padding-top: 1.8rem;
-        }
-
-        @media (max-width: 700px) {
-            body {
-                padding: 1rem;
-            }
-            .container {
-                padding: 1.2rem;
-            }
-            .func-name {
-                font-size: 1.3rem;
-            }
-            .example-section {
-                margin: 0.5rem 0.5rem 1.5rem 0.5rem;
-            }
-            .desc-section {
-                padding: 1rem 1rem 0 1rem;
-            }
-        }
-    </style>
+    @media (max-width: 768px) {
+      .slide { padding: 25px; width: 95%; height: 90%; }
+      .nav-btn { font-size: 2rem; padding: 10px; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h1>🗺️ Áreas Geográficas y Geométricas en pgAdmin</h1>
-    <div class="intro">
-        <p>📐 En <strong>PostgreSQL</strong> + <strong>PostGIS</strong> (extensión geoespacial) y en el motor nativo de tipos geométricos, existen funciones poderosas para calcular áreas. La diferencia clave:</p>
-        <p>✅ <strong>Geométricas (planas)</strong>: trabajan sobre coordenadas Cartesianas (proyección plana). El área se calcula en <strong>unidades cuadradas</strong> del sistema de referencia (metros, pies, grados²…).</p>
-        <p>🌍 <strong>Geográficas (elipsoidales)</strong>: consideran la curvatura terrestre. Usan <strong>geography</strong> de PostGIS, devuelven área en <strong>metros cuadrados</strong> sobre el esferoide (WGS84).</p>
-        <p>📌 A continuación se detallan las funciones más útiles con su <strong>nombre, descripción y ejemplos claros</strong> para ejecutar en pgAdmin (Query Tool).</p>
+  <div class="slides-container">
+    <button class="nav-btn prev-btn" onclick="changeSlide(-1)">◀</button>
+    <button class="nav-btn next-btn" onclick="changeSlide(1)">▶</button>
+    <span class="counter" id="slideCounter">1 / 13</span>
+
+    <!-- Diapositiva 1: Portada -->
+    <div class="slide active">
+      <h1>La función de áreas geográficas y geométricas en bases de datos</h1>
+      <h3>Cálculo, almacenamiento y análisis espacial</h3>
+      <p class="author-name">Stiven Leonardo Romero Cárdenas</p>
     </div>
 
-    <div class="grid-cards">
-        
-        <!-- FUNCIÓN 1: ST_Area para geometría (PostGIS) -->
-        <div class="function-card">
-            <div class="func-header">
-                <div class="func-name">ST_Area(geometry) <small>PostGIS · área planimétrica</small></div>
-            </div>
-            <div class="desc-section">
-                <p><strong>📐 Descripción:</strong> Calcula el área de una geometría poligonal (POLYGON, MULTIPOLYGON) en el <strong>sistema de coordenadas asociado</strong>. Si la geometría está en un CRS proyectado (como UTM, Web Mercator), el área se devuelve en las <strong>unidades lineales al cuadrado</strong> (metros², pies², etc.). Si usa coordenadas geográficas (longitud/latitud, SRID 4326), el resultado será en <strong>grados²</strong>, lo cual carece de sentido físico real → se recomienda convertir a <code>geography</code> o proyectar.</p>
-                <p>✔️ <strong>Requisito:</strong> Extensión PostGIS habilitada (<code>CREATE EXTENSION postgis;</code>).</p>
-            </div>
-            <div class="example-section">
-                <div class="example-title">💡 <span>EJEMPLO MUY CLARO</span> Área de un cuadrado en metros (SRID 32630 - UTM)</div>
-                <pre><code>-- 1. Crear un cuadrado de 100x100 metros (coordenadas UTM, zona 30N)
-WITH mi_parcela AS (
-    SELECT ST_GeomFromText('POLYGON((500000 4640000, 500100 4640000, 500100 4640100, 500000 4640100, 500000 4640000))', 32630) AS geom
-)
-SELECT 
-    ST_Area(geom) AS area_metros_cuadrados,
-    ST_Area(geom) / 10000 AS area_hectareas
-FROM mi_parcela;</code></pre>
-                <div class="output-sample">
-                    <strong>✅ Resultado (pgAdmin):</strong><br>
-                    area_metros_cuadrados = 10000.0  |  area_hectareas = 1.00<br>
-                    <span style="font-size:0.85rem;">👉 Interpretación: el polígono de 100m x 100m genera exactamente 10.000 m².</span>
-                </div>
-                <hr>
-                <div class="example-title">🌍 Ejemplo con coordenadas geográficas (evitar grados²)</div>
-                <pre><code>-- Geometría en WGS84 (longitud/latitud) → ST_Area da grados², sin significado real.
-SELECT ST_Area(ST_GeomFromText('POLYGON((-71.5 -33.0, -71.4 -33.0, -71.4 -32.9, -71.5 -32.9, -71.5 -33.0))', 4326)) AS area_grados_cuadrados;
--- Resultado: ~0.008 grados², lo cual no es útil. Para área real use ST_Area(geography).</code></pre>
-            </div>
-        </div>
-
-        <!-- FUNCIÓN 2: ST_Area para geografía (PostGIS) - área real sobre el elipsoide -->
-        <div class="function-card">
-            <div class="func-header">
-                <div class="func-name">ST_Area(geography) <small>PostGIS · área geográfica real</small></div>
-            </div>
-            <div class="desc-section">
-                <p><strong>🌐 Descripción:</strong> Versión sobre tipo <strong>geography</strong>. Calcula el área de una superficie poligonal sobre el <strong>esferoide terrestre</strong> (por defecto WGS84). Devuelve el área en <strong>metros cuadrados</strong>, teniendo en cuenta la curvatura de la Tierra. Ideal para datos con coordenadas geográficas (lat/lon) sin necesidad de reproyectar.</p>
-                <p>✔️ Acepta polígonos, multipolígonos. Parámetro opcional <code>use_spheroid</code> (true por defecto). Si se usa <code>false</code> calcula sobre esfera perfecta, más rápido pero ligeramente menos preciso.</p>
-                <p><strong>⚠️ Nota:</strong> Las geometrías deben ser válidas y no cruzar el antimeridiano (puede usarse <code>ST_ShiftLongitude</code>).</p>
-            </div>
-            <div class="example-section">
-                <div class="example-title">🌎 <span>EJEMPLO CLARO</span> Superficie de un cuadrado de 1° x 1° cerca del ecuador</div>
-                <pre><code>-- Polígono de 1 grado de lado en el ecuador (longitud -75° a -74°, latitud 0° a 1°)
-SELECT ST_Area(
-    ST_GeogFromText('POLYGON((-75 0, -74 0, -74 1, -75 1, -75 0))')
-) AS area_metros_cuadrados;</code></pre>
-                <div class="output-sample">
-                    <strong>📏 Resultado aproximado:</strong> 12.312.000 m² (≈ 12.312 km²). <br>
-                    ✨ <em>Nota: debido a la curvatura, varía ligeramente según el esferoide. En un plano sería 111.319 m de lado → área ~12.392 km²; la diferencia muestra por qué es clave usar geography.</em>
-                </div>
-                <hr>
-                <div class="example-title">🏞️ Comparación con el área plana (grados²) vs geográfica</div>
-                <pre><code>-- Mismo polígono en WGS84 (geometría) vs geografía
-WITH region AS (
-   SELECT ST_GeomFromText('POLYGON((-71.2 -34.5, -70.8 -34.5, -70.8 -34.1, -71.2 -34.1, -71.2 -34.5))', 4326) AS geom
-)
-SELECT 
-    ST_Area(geom) AS area_grados_cuadrados,
-    ST_Area(geom::geography) AS area_real_m2,
-    ROUND(ST_Area(geom::geography) / 1000000, 2) AS area_km2
-FROM region;</code></pre>
-                <div class="output-sample">
-                    <strong>✅ Salida típica:</strong> area_grados_cuadrados ~0.24 | area_real_m2 ~ 1.881.500.000 m² | area_km2 ~ 1.881.50 km²<br>
-                    🗺️ La conversión a geography evita el sinsentido de los grados².
-                </div>
-            </div>
-        </div>
-
-        <!-- FUNCIÓN 3: area(polygon) - Tipo geométrico nativo de PostgreSQL -->
-        <div class="function-card">
-            <div class="func-header">
-                <div class="func-name">area(polygon) <small>PostgreSQL nativo · geometría plana</small></div>
-            </div>
-            <div class="desc-section">
-                <p><strong>⬛ Descripción:</strong> Función nativa de PostgreSQL para el tipo de dato <strong>polygon</strong> (no requiere PostGIS). Calcula el área de un polígono en el plano cartesiano. Las coordenadas se interpretan como números reales (x,y) y el área se devuelve en <strong>unidades cuadradas</strong> acordes a las coordenadas suministradas. Es útil para geometrías 2D simples sin necesidad de extensiones espaciales.</p>
-                <p>🔹 Se basa en la fórmula del área del polígono (fórmula del shoelace). El resultado siempre es positivo.</p>
-                <p><strong>Nota:</strong> Los polígonos se definen con sintaxis <code>'((x1,y1),(x2,y2),...)'</code> y el último punto debe cerrar implícitamente el anillo.</p>
-            </div>
-            <div class="example-section">
-                <div class="example-title">📐 <span>EJEMPLO MUY CLARO</span> Área de un triángulo y un cuadrado</div>
-                <pre><code>-- Triángulo rectángulo de base 4 y altura 3
-SELECT area(polygon '((0,0),(4,0),(0,3))') AS area_triangulo;
-
--- Cuadrado de lado 5
-SELECT area(polygon '((0,0),(5,0),(5,5),(0,5))') AS area_cuadrado;</code></pre>
-                <div class="output-sample">
-                    <strong>📌 Resultados:</strong><br>
-                    area_triangulo = 6.0  &nbsp;&nbsp;(0.5 * 4 * 3 = 6)<br>
-                    area_cuadrado = 25.0 &nbsp;(5 * 5 = 25)
-                </div>
-                <hr>
-                <div class="example-title">🏠 Polígono irregular en el plano (coordenadas arbitrarias)</div>
-                <pre><code>-- Polígono con forma de L (rectángulos unidos)
-SELECT area(polygon '((0,0),(4,0),(4,2),(2,2),(2,4),(0,4))') AS area_forma_L;</code></pre>
-                <div class="output-sample">
-                    <strong>🧮 Cálculo:</strong> área = 4*2 + 2*2 = 8+4 = 12 unidades².<br>
-                    Resultado SQL: 12.0
-                </div>
-            </div>
-        </div>
-
-        <!-- FUNCIÓN 4: area(circle) - Tipo círculo nativo de PostgreSQL -->
-        <div class="function-card">
-            <div class="func-header">
-                <div class="func-name">area(circle) <small>PostgreSQL nativo · círculos planos</small></div>
-            </div>
-            <div class="desc-section">
-                <p><strong>⚪ Descripción:</strong> PostgreSQL también ofrece el tipo <strong>circle</strong> (centro y radio). La función <code>area(circle)</code> devuelve el área plana de un círculo: <strong>π * radio²</strong>. Resultado en las mismas unidades que el radio al cuadrado. Es una función geométrica básica pero muy útil para geometrías euclidianas.</p>
-                <p>Formato de entrada: <code>'&lt;(x,y&gt;, radio)'</code> o <code>'((x,y), radio)'</code>. El radio es numérico.</p>
-            </div>
-            <div class="example-section">
-                <div class="example-title">🔘 <span>EJEMPLO MUY CLARO</span> Círculo de radio 3 unidades</div>
-                <pre><code>-- Crear un círculo con centro (0,0) y radio 3
-SELECT area(circle '((0,0),3)') AS area_circulo;</code></pre>
-                <div class="output-sample">
-                    <strong>📐 Resultado exacto (en unidades de radio²):</strong> 28.27433388230814 <br>
-                    (π × 3² = π × 9 ≈ 28.274)
-                </div>
-                <hr>
-                <div class="example-title">🏙️ Comparación de áreas: círculo vs cuadrado circunscrito</div>
-                <pre><code>WITH figuras AS (
-    SELECT 
-        area(circle '((10,10),5)') AS circulo_area,
-        area(polygon '((5,5),(15,5),(15,15),(5,15))') AS cuadrado_area
-)
-SELECT 
-    circulo_area,
-    cuadrado_area,
-    ROUND((circulo_area / cuadrado_area) * 100, 2) AS porcentaje_circulo_cuadrado
-FROM figuras;</code></pre>
-                <div class="output-sample">
-                    <strong>📊 Salida:</strong> circulo_area = 78.5398, cuadrado_area = 100, porcentaje ≈ 78.54%<br>
-                    ✔️ Un círculo inscrito en un cuadrado ocupa ~78.5% de su área.
-                </div>
-            </div>
-        </div>
-
-        <!-- BONUS / función útil: ST_Area + transformación para geometrías geográficas con proyección -->
-        <div class="function-card">
-            <div class="func-header">
-                <div class="func-name">ST_Area + ST_Transform <small>Conversión entre geometrías proyectadas</small></div>
-            </div>
-            <div class="desc-section">
-                <p><strong>🔄 Descripción:</strong> Cuando se tienen geometrías geográficas almacenadas como <strong>geometry</strong> (SRID 4326), podemos calcular el área real usando <code>ST_Area(ST_Transform(geom, destino_proyectado))</code> o convertir a <code>geography</code>. Esta combinación es eficiente si se requiere trabajar en un CRS local (metros).</p>
-                <p><strong>Recomendación:</strong> Para máxima precisión, elegir un sistema de coordenadas proyectado adecuado para la región de interés (por ejemplo UTM).</p>
-            </div>
-            <div class="example-section">
-                <div class="example-title">🗺️ <span>Área real a partir de geometría WGS84 usando ST_Transform</span></div>
-                <pre><code>-- Ejemplo: polígono en Santiago, Chile (WGS84). Transformamos a UTM 19S (SRID 32719)
-SELECT ST_Area(
-    ST_Transform(
-        ST_GeomFromText('POLYGON((-70.65 -33.45, -70.60 -33.45, -70.60 -33.40, -70.65 -33.40, -70.65 -33.45))', 4326),
-        32719
-    )
-) AS area_metros_cuadrados;</code></pre>
-                <div class="output-sample">
-                    <strong>🧭 Resultado orientativo:</strong> ~ 22.750 m² (depende del polígono exacto). <br>
-                    ★ Este valor coincide con el área real en el terreno, ya que UTM usa metros.
-                </div>
-                <div class="example-title">⚡ Alternativa directa con geography (más simple)</div>
-                <pre><code>SELECT ST_Area( ST_GeogFromText('POLYGON((-70.65 -33.45, -70.60 -33.45, -70.60 -33.40, -70.65 -33.40, -70.65 -33.45))') );</code></pre>
-                <div class="output-sample">
-                    📍 Da el mismo resultado (metros²) sin reproyección explícita, usando el elipsoide.
-                </div>
-            </div>
-        </div>
+    <!-- Diapositiva 2: Introducción -->
+    <div class="slide">
+      <h2>Introducción</h2>
+      <ul>
+        <li>Las bases de datos modernas almacenan <strong>datos espaciales</strong> (ubicaciones, formas, regiones).</li>
+        <li>Dos conceptos clave: <strong>áreas geométricas</strong> (planas) y <strong>áreas geográficas</strong> (sobre la Tierra curva).</li>
+        <li>Objetivos:
+          <ul>
+            <li>Entender cómo se representan.</li>
+            <li>Conocer las funciones para calcular y operar con áreas.</li>
+            <li>Ver casos de uso reales.</li>
+          </ul>
+        </li>
+      </ul>
     </div>
 
-    <footer>
-        🧠 <strong>Resumen práctico en pgAdmin:</strong> Usa <code>ST_Area(geometry)</code> para planos proyectados, <code>ST_Area(geography)</code> para áreas terrestres reales con lat/lon, y las funciones <code>area(polygon)</code>/<code>area(circle)</code> para geometrías nativas de PostgreSQL sin PostGIS.  
-        <br>🔍 Todos los ejemplos pueden ejecutarse directamente en la ventana de consultas de pgAdmin. Asegúrate de tener PostGIS instalado si utilizas funciones ST_.
-    </footer>
-</div>
+    <!-- Diapositiva 3: Tipos de datos espaciales -->
+    <div class="slide">
+      <h2>Tipos de datos espaciales</h2>
+      <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <h4>Geometría (Geometry)</h4>
+          <ul>
+            <li>Plano cartesiano (x, y)</li>
+            <li>Unidades planas (metros, grados planos)</li>
+            <li>Ideal para mapas locales, planos, UTM</li>
+          </ul>
+        </div>
+        <div style="flex: 1; min-width: 250px;">
+          <h4>Geografía (Geography)</h4>
+          <ul>
+            <li>Curvatura terrestre (esferoide)</li>
+            <li>Superficie real, lat/lon (WGS 84)</li>
+            <li>Análisis globales, rutas, parcelas grandes</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Diapositiva 4: Almacenamiento -->
+    <div class="slide">
+      <h2>¿Cómo se almacenan las áreas?</h2>
+      <ul>
+        <li>Una <strong>región</strong> se guarda como polígono o multipolígono.</li>
+        <li>El área <strong>no se almacena</strong> como columna fija, se calcula dinámicamente.</li>
+      </ul>
+      <pre><code>CREATE TABLE parcelas (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT,
+  geom GEOMETRY(POLYGON, 32618) -- UTM zona 18N
+);</code></pre>
+    </div>
+
+    <!-- Diapositiva 5: Funciones principales -->
+    <div class="slide">
+      <h2>Funciones principales de área</h2>
+      <ul>
+        <li><code>ST_Area(geometría)</code> → área en unidades del sistema de coordenadas (ej. m² si es UTM).</li>
+        <li><code>ST_Area(geografía)</code> → área en m² considerando curvatura.</li>
+      </ul>
+      <pre><code>SELECT nombre, ST_Area(geom) AS area_m2 FROM parcelas;
+SELECT nombre, ST_Area(geog) AS area_m2 FROM paises;</code></pre>
+      <p>También existen <code>ST_Length</code>, <code>ST_Perimeter</code> para bordes.</p>
+    </div>
+
+    <!-- Diapositiva 6: Ejemplo geometría -->
+    <div class="slide">
+      <h2>Ejemplo práctico con geometría</h2>
+      <p><strong>Escenario:</strong> Parcelas agrícolas en Colombia (Magna-Sirgas / UTM).</p>
+      <pre><code>INSERT INTO parcelas (nombre, geom)
+VALUES ('Finca El Edén',
+  ST_GeomFromText('POLYGON((...))', 32618));
+
+SELECT nombre, ST_Area(geom) / 10000 AS ha
+FROM parcelas;</code></pre>
+      <p>Resultado exacto dentro de la proyección plana.</p>
+    </div>
+
+    <!-- Diapositiva 7: Ejemplo geografía -->
+    <div class="slide">
+      <h2>Ejemplo práctico con geografía</h2>
+      <p><strong>Escenario:</strong> Áreas de departamentos en Colombia (SRID 4326).</p>
+      <pre><code>SELECT depto,
+       ST_Area(geog::geography) / 1e6 AS km2
+FROM limites_departamentales;</code></pre>
+      <p>Si usáramos <code>ST_Area(geom)</code> en 4326, obtendríamos "grados cuadrados", sin sentido físico.</p>
+    </div>
+
+    <!-- Diapositiva 8: Criterios -->
+    <div class="slide">
+      <h2>¿Qué función usar? Criterios</h2>
+      <table>
+        <tr><th>Usar GEOMETRY</th><th>Usar GEOGRAPHY</th></tr>
+        <tr><td>Datos locales o regionales</td><td>Datos globales o continentales</td></tr>
+        <tr><td>Proyección plana adecuada (UTM, Lambert)</td><td>Coordenadas geográficas WGS84</td></tr>
+        <tr><td>Cálculos rápidos, operaciones euclidianas</td><td>Precisión en distancias y áreas reales</td></tr>
+        <tr><td>Catastro, planos de construcción</td><td>Rutas marítimas, áreas entre países</td></tr>
+      </table>
+    </div>
+
+    <!-- Diapositiva 9: Índices -->
+    <div class="slide">
+      <h2>Índices espaciales y rendimiento</h2>
+      <ul>
+        <li>Para grandes conjuntos: <strong>índices GiST</strong>.</li>
+      </ul>
+      <pre><code>CREATE INDEX idx_geom ON parcelas USING GIST (geom);</code></pre>
+      <ul>
+        <li>Permiten buscar rápido "parcelas con área > 1 ha" usando el <em>bounding box</em>.</li>
+        <li>Las funciones de área se aplican después de filtrar.</li>
+      </ul>
+    </div>
+
+    <!-- Diapositiva 10: Casos de uso -->
+    <div class="slide">
+      <h2>Casos de uso reales</h2>
+      <ul>
+        <li>🏠 <strong>Catastro:</strong> superficies de predios para impuestos.</li>
+        <li>🌳 <strong>Medio ambiente:</strong> monitoreo de deforestación.</li>
+        <li>🚜 <strong>Agricultura de precisión:</strong> medir lotes, estimar insumos.</li>
+        <li>🚚 <strong>Logística:</strong> áreas de cobertura de centros de distribución.</li>
+        <li>🏥 <strong>Salud pública:</strong> extensión de focos epidémicos.</li>
+      </ul>
+    </div>
+
+    <!-- Diapositiva 11: Buenas prácticas -->
+    <div class="slide">
+      <h2>Buenas prácticas y recomendaciones</h2>
+      <ul>
+        <li>✔️ Verifica el SRID de tus datos.</li>
+        <li>✔️ Usa proyecciones con unidades en metros para áreas con <code>geometry</code>.</li>
+        <li>✔️ Prefiere <code>geography</code> para escalas continentales/globales.</li>
+        <li>✔️ <code>ST_Area(geog, use_spheroid:=true)</code> para máxima precisión; <code>false</code> para aproximación rápida.</li>
+        <li>✔️ Evita cálculos de área repetidos; materializa si es necesario.</li>
+      </ul>
+    </div>
+
+    <!-- Diapositiva 12: Conclusión -->
+    <div class="slide">
+      <h2>Conclusión</h2>
+      <ul>
+        <li>Las bases de datos espaciales gestionan y analizan áreas con funciones robustas.</li>
+        <li>La diferencia entre geometría y geografía es crucial para resultados correctos.</li>
+        <li><code>ST_Area</code> es la puerta a innumerables aplicaciones territoriales.</li>
+        <li>Con índices y buenas prácticas, los análisis son rápidos y escalables.</li>
+      </ul>
+      <p><strong>Pregunta para el público:</strong><br>¿Qué proyecto espacial les gustaría implementar con estas herramientas?</p>
+    </div>
+
+    <!-- Diapositiva 13: Agradecimientos -->
+    <div class="slide">
+      <h1>¡Gracias!</h1>
+      <p>Preguntas y comentarios</p>
+      <p class="small-note">Stiven Leonardo Romero Cárdenas</p>
+    </div>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const counter = document.getElementById('slideCounter');
+    const totalSlides = slides.length;
+
+    function showSlide(index) {
+      slides.forEach(slide => slide.classList.remove('active'));
+      slides[index].classList.add('active');
+      counter.textContent = (index + 1) + ' / ' + totalSlides;
+      currentSlide = index;
+    }
+
+    function changeSlide(direction) {
+      let newIndex = currentSlide + direction;
+      if (newIndex < 0) newIndex = totalSlides - 1;
+      if (newIndex >= totalSlides) newIndex = 0;
+      showSlide(newIndex);
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        changeSlide(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        changeSlide(-1);
+      }
+    });
+
+    showSlide(0);
+  </script>
 </body>
 </html>
